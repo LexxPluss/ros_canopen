@@ -111,7 +111,6 @@ Command402::TransitionTable::TransitionTable(){
     Op quickstop((1<<CW_Enable_Voltage), (1<<CW_Fault_Reset) | (1<<CW_Quick_Stop));
     /* 7*/ add(s::Ready_To_Switch_On, s::Quick_Stop_Active, quickstop); // transit to Switch_On_Disabled
     /*10*/ add(s::Switched_On, s::Quick_Stop_Active, quickstop); // transit to Switch_On_Disabled
-    /*11*/ add(s::Operation_Enable, s::Quick_Stop_Active, quickstop);
 
     // fault reset
     /*15*/ add(s::Fault, s::Switch_On_Disabled, Op((1<<CW_Fault_Reset), 0));

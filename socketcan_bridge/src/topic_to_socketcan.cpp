@@ -62,14 +62,14 @@ namespace socketcan_bridge
         // ROS_WARN("Refusing to send invalid frame: %s.", can::tostring(f, true).c_str());
         // can::tostring cannot be used for dlc > 8 frames. It causes an crash
         // due to usage of boost::array for the data array. The should always work.
-        ROS_ERROR("Invalid frame from topic: id: %#04x, length: %d, is_extended: %d", m.id, m.dlc, m.is_extended);
+        ROS_WARN("Invalid frame from topic: id: %#04x, length: %d, is_extended: %d", m.id, m.dlc, m.is_extended);
         return;
       }
 
       bool res = driver_->send(f);
       if (!res)
       {
-        ROS_ERROR("Failed to send message: %s.", can::tostring(f, true).c_str());
+        ROS_WARN("Failed to send message: %s.", can::tostring(f, true).c_str());
       }
     };
 
@@ -85,7 +85,7 @@ namespace socketcan_bridge
       }
       else
       {
-        ROS_ERROR("Error: %s, asio: %s", err.c_str(), s.error_code.message().c_str());
+        ROS_WARN("Error: %s, asio: %s", err.c_str(), s.error_code.message().c_str());
       }
     };
 };  // namespace socketcan_bridge

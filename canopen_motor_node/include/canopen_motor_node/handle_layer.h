@@ -75,7 +75,7 @@ public:
             }
         }
         catch( const std::exception &e){
-            ROS_ERROR_STREAM("Could not find variable '" << n << "', reason: " << boost::diagnostic_information(e));
+            ROS_WARN_STREAM("Could not find variable '" << n << "', reason: " << boost::diagnostic_information(e));
         }
         return 0;
     }

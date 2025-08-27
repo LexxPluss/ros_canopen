@@ -92,7 +92,7 @@ namespace socketcan_bridge
       // ROS_DEBUG("Message came in: %s", can::tostring(f, true).c_str());
       if (!f.isValid())
       {
-        ROS_ERROR("Invalid frame from SocketCAN: id: %#04x, length: %d, is_extended: %d, is_error: %d, is_rtr: %d",
+        ROS_WARN("Invalid frame from SocketCAN: id: %#04x, length: %d, is_extended: %d, is_error: %d, is_rtr: %d",
                   f.id, f.dlc, f.is_extended, f.is_error, f.is_rtr);
         return;
       }
@@ -127,7 +127,7 @@ namespace socketcan_bridge
       }
       else
       {
-        ROS_ERROR("Error: %s, asio: %s", err.c_str(), s.error_code.message().c_str());
+        ROS_WARN("Error: %s, asio: %s", err.c_str(), s.error_code.message().c_str());
       }
     };
 };  // namespace socketcan_bridge

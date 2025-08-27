@@ -73,7 +73,7 @@ bool HandleLayer::switchMode(const MotorBase::OperationMode &m){
         forward_command_ = false;
         jh_ = 0; // disconnect handle
         if(!motor_->enterModeAndWait(m)){
-            ROS_ERROR_STREAM(jsh_.getName() << "could not enter mode " << (int)m);
+            ROS_WARN_STREAM(jsh_.getName() << "could not enter mode " << (int)m);
             LayerStatus s;
             motor_->halt(s);
             return false;

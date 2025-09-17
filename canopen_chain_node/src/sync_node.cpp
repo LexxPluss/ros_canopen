@@ -44,7 +44,7 @@ int main(int argc, char** argv){
     ros::NodeHandle sync_nh(nh_priv, "sync");
     int sync_ms;
     if(!sync_nh.getParam("interval_ms", sync_ms) || sync_ms <=0){
-        ROS_ERROR_STREAM("Sync interval  "<< sync_ms << " is invalid");
+        ROS_WARN_STREAM("Sync interval  "<< sync_ms << " is invalid");
         return 1;
     }
 
@@ -53,14 +53,14 @@ int main(int argc, char** argv){
         ROS_WARN("Sync overflow was not specified, so overflow is disabled per default");
     }
     if(sync_overflow == 1 || sync_overflow > 240){
-        ROS_ERROR_STREAM("Sync overflow  "<< sync_overflow << " is invalid");
+        ROS_WARN_STREAM("Sync overflow  "<< sync_overflow << " is invalid");
         return 1;
     }
 
 
     std::string can_device;
     if(!nh_priv.getParam("bus/device",can_device)){
-        ROS_ERROR("Device not set");
+        ROS_WARN("Device not set");
         return 1;
     }
 

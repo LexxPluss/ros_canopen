@@ -64,7 +64,7 @@ public:
             return true;
         }
         catch(std::exception& e){
-            ROS_ERROR_STREAM(boost::diagnostic_information(e));
+            ROS_WARN_STREAM(boost::diagnostic_information(e));
             return false;
         }
     }

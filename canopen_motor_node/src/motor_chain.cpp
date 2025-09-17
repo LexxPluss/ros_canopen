@@ -14,7 +14,7 @@ bool MotorChain::nodeAdded(XmlRpc::XmlRpcValue &params, const canopen::NodeShare
     if(params.hasMember("joint")) joint.assign(params["joint"]);
 
     if(!robot_layer_->getJoint(joint)){
-        ROS_ERROR_STREAM("joint " + joint + " was not found in URDF");
+        ROS_WARN_STREAM("joint " + joint + " was not found in URDF");
         return false;
     }
 
@@ -31,12 +31,12 @@ bool MotorChain::nodeAdded(XmlRpc::XmlRpcValue &params, const canopen::NodeShare
     }
     catch( const std::exception &e){
         std::string info = boost::diagnostic_information(e);
-        ROS_ERROR_STREAM(info);
+        ROS_WARN_STREAM(info);
         return false;
     }
 
     if(!motor){
-        ROS_ERROR_STREAM("Could not allocate motor.");
+        ROS_WARN_STREAM("Could not allocate motor.");
         return false;
     }
 
@@ -48,7 +48,7 @@ bool MotorChain::nodeAdded(XmlRpc::XmlRpcValue &params, const canopen::NodeShare
 
     canopen::LayerStatus s;
     if(!handle->prepareFilters(s)){
-        ROS_ERROR_STREAM(s.reason());
+        ROS_WARN_STREAM(s.reason());
         return false;
     }
 

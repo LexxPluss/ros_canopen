@@ -78,11 +78,11 @@ void RosChain::run(){
         try{
             read(s);
             write(s);
-            if(!s.bounded<LayerStatus::Warn>()) ROS_ERROR_STREAM_THROTTLE(10, s.reason());
+            if(!s.bounded<LayerStatus::Warn>()) ROS_WARN_STREAM_THROTTLE(10, s.reason());
             else if(!s.bounded<LayerStatus::Ok>()) ROS_WARN_STREAM_THROTTLE(10, s.reason());
         }
         catch(const canopen::Exception& e){
-            ROS_ERROR_STREAM_THROTTLE(1, boost::diagnostic_information(e));
+            ROS_WARN_STREAM_THROTTLE(1, boost::diagnostic_information(e));
         }
         if(!sync_){
             abs_time += update_duration_;
@@ -101,9 +101,9 @@ public:
     ~ResponseLogger() {
         if(!logged && !res.success){
             if (res.message.empty()){
-                ROS_ERROR_STREAM(command << " failed");
+                ROS_WARN_STREAM(command << " failed");
             }else{
-                ROS_ERROR_STREAM(command << " failed: " << res.message);
+                ROS_WARN_STREAM(command << " failed: " << res.message);
             }
             logged = true;
         }
@@ -155,7 +155,7 @@ bool RosChain::handle_init(std_srvs::Trigger::Request  &req, std_srvs::Trigger::
     }
     catch( const std::exception &e){
         std::string info = boost::diagnostic_information(e);
-        ROS_ERROR_STREAM(info);
+        ROS_WARN_STREAM(info);
         res.message = info;
         status.error(res.message);
     }
@@ -188,7 +188,7 @@ bool RosChain::handle_recover(std_srvs::Trigger::Request  &req, std_srvs::Trigge
         }
         catch( const std::exception &e){
             std::string info = boost::diagnostic_information(e);
-            ROS_ERROR_STREAM(info);
+            ROS_WARN_STREAM(info);
             res.message = info;
         }
         catch(...){
@@ -286,7 +286,7 @@ bool RosChain::setup_bus(){
     bool loopback;
 
     if(!bus_nh.getParam("device",can_device)){
-        ROS_ERROR("Device not set");
+        ROS_WARN("Device not set");
         return false;
     }
 
@@ -299,14 +299,14 @@ bool RosChain::setup_bus(){
     }
 
     catch(pluginlib::PluginlibException& ex){
-        ROS_ERROR_STREAM(ex.what());
+        ROS_WARN_STREAM(ex.what());
         return false;
     }
 
     state_listener_ = interface_->createStateListenerM(this, &RosChain::logState);
 
     if(bus_nh.getParam("master_type",master_alloc)){
-        ROS_ERROR("please migrate to master allocators");
+        ROS_WARN("please migrate to master allocators");
         return false;
     }
 
@@ -317,12 +317,12 @@ bool RosChain::setup_bus(){
     }
     catch( const std::exception &e){
         std::string info = boost::diagnostic_information(e);
-        ROS_ERROR_STREAM(info);
+        ROS_WARN_STREAM(info);
         return false;
     }
 
     if(!master_){
-        ROS_ERROR_STREAM("Could not allocate master.");
+        ROS_WARN_STREAM("Could not allocate master.");
         return false;
     }
 
@@ -342,14 +342,14 @@ bool RosChain::setup_sync(){
     }
 
     if(sync_ms < 0){
-        ROS_ERROR_STREAM("Sync interval  "<< sync_ms << " is invalid");
+        ROS_WARN_STREAM("Sync interval  "<< sync_ms << " is invalid");
         return false;
     }
 
     int update_ms = sync_ms;
     if(sync_ms == 0) nh_priv_.getParam("update_ms", update_ms);
     if(update_ms == 0){
-        ROS_ERROR_STREAM("Update interval  "<< sync_ms << " is invalid");
+        ROS_WARN_STREAM("Update interval  "<< sync_ms << " is invalid");
         return false;
     }else{
         update_duration_ = boost::chrono::milliseconds(update_ms);
@@ -360,7 +360,7 @@ bool RosChain::setup_sync(){
             ROS_WARN("Sync overflow was not specified, so overflow is disabled per default");
         }
         if(sync_overflow == 1 || sync_overflow > 240){
-            ROS_ERROR_STREAM("Sync overflow  "<< sync_overflow << " is invalid");
+            ROS_WARN_STREAM("Sync overflow  "<< sync_overflow << " is invalid");
             return false;
         }
         if(sync_nh.param("silence_us", 0) != 0){
@@ -371,7 +371,7 @@ bool RosChain::setup_sync(){
         sync_ = master_->getSync(SyncProperties(can::MsgHeader(0x80), sync_ms, sync_overflow));
 
         if(!sync_ && sync_ms){
-            ROS_ERROR_STREAM("Initializing sync master failed");
+            ROS_WARN_STREAM("Initializing sync master failed");
             return false;
         }
         add(sync_);
@@ -390,7 +390,7 @@ bool RosChain::setup_heartbeat(){
         if( !got_any) return true; // nothing todo
 
         if(rate <=0 ){
-            ROS_ERROR_STREAM("Rate '"<< rate << "' is invalid");
+            ROS_WARN_STREAM("Rate '"<< rate << "' is invalid");
             return false;
         }
 
@@ -398,7 +398,7 @@ bool RosChain::setup_heartbeat(){
 
 
         if(!hb_sender_.frame.isValid()){
-            ROS_ERROR_STREAM("Message '"<< msg << "' is invalid");
+            ROS_WARN_STREAM("Message '"<< msg << "' is invalid");
             return false;
         }
 
@@ -425,13 +425,13 @@ bool addLoggerEntries(XmlRpc::XmlRpcValue merged, const std::string param, uint8
                 std::pair<std::string, bool> obj_name = parseObjectName(objs[i]);
 
                 if(!logger.add(level, obj_name.first, obj_name.second)){
-                    ROS_ERROR_STREAM("Could not create logger for '" << obj_name.first << "'");
+                    ROS_WARN_STREAM("Could not create logger for '" << obj_name.first << "'");
                     return false;
                 }
             }
         }
         catch(...){
-            ROS_ERROR_STREAM("Could not parse " << param << " parameter");
+            ROS_WARN_STREAM("Could not parse " << param << " parameter");
             return false;
         }
     }
@@ -457,7 +457,7 @@ bool RosChain::setup_nodes(){
             if(nodes[i].hasMember("name")){
                 if(!setup_node(nodes[i], nodes[i]["name"], defaults)) return false;
             }else{
-                ROS_ERROR_STREAM("Node at list index " << i << " has no name");
+                ROS_WARN_STREAM("Node at list index " << i << " has no name");
                 return false;
             }
         }
@@ -475,7 +475,7 @@ bool RosChain::setup_node(const XmlRpc::XmlRpcValue& params, const std::string &
         node_id = params["id"];
     }
     catch(...){
-        ROS_ERROR_STREAM("Node '" << name  << "' has no id");
+        ROS_WARN_STREAM("Node '" << name  << "' has no id");
         return false;
     }
     MergedXmlRpcStruct merged(params, defaults);
@@ -488,12 +488,12 @@ bool RosChain::setup_node(const XmlRpc::XmlRpcValue& params, const std::string &
     if(merged.hasMember("dcf_overlay")){
         XmlRpc::XmlRpcValue dcf_overlay = merged["dcf_overlay"];
         if(dcf_overlay.getType() != XmlRpc::XmlRpcValue::TypeStruct){
-            ROS_ERROR_STREAM("dcf_overlay is no struct");
+            ROS_WARN_STREAM("dcf_overlay is no struct");
             return false;
         }
         for(XmlRpc::XmlRpcValue::iterator ito = dcf_overlay.begin(); ito!= dcf_overlay.end(); ++ito){
             if(ito->second.getType() != XmlRpc::XmlRpcValue::TypeString){
-                ROS_ERROR_STREAM("dcf_overlay '" << ito->first << "' must be string");
+                ROS_WARN_STREAM("dcf_overlay '" << ito->first << "' must be string");
                 return false;
             }
             overlay.push_back(ObjectDict::Overlay::value_type(ito->first, ito->second));
@@ -506,7 +506,7 @@ bool RosChain::setup_node(const XmlRpc::XmlRpcValue& params, const std::string &
         eds = (std::string) merged["eds_file"];
     }
     catch(...){
-        ROS_ERROR_STREAM("EDS path '" << eds << "' invalid");
+        ROS_WARN_STREAM("EDS path '" << eds << "' invalid");
         return false;
     }
 
@@ -526,7 +526,7 @@ bool RosChain::setup_node(const XmlRpc::XmlRpcValue& params, const std::string &
 
     ObjectDictSharedPtr  dict = ObjectDict::fromFile(eds, overlay);
     if(!dict){
-        ROS_ERROR_STREAM("EDS '" << eds << "' could not be parsed");
+        ROS_WARN_STREAM("EDS '" << eds << "' could not be parsed");
         return false;
     }
     canopen::NodeSharedPtr node = std::make_shared<canopen::Node>(interface_, dict, node_id, sync_);
@@ -552,14 +552,14 @@ bool RosChain::setup_node(const XmlRpc::XmlRpcValue& params, const std::string &
 
                 PublishFuncType pub = createPublishFunc(nh_, node_name +"_"+obj_name.first, node, obj_name.first, obj_name.second);
                 if(!pub){
-                    ROS_ERROR_STREAM("Could not create publisher for '" << obj_name.first << "'");
+                    ROS_WARN_STREAM("Could not create publisher for '" << obj_name.first << "'");
                     return false;
                 }
                 publishers_.push_back(pub);
             }
         }
         catch(...){
-            ROS_ERROR("Could not parse publish parameter");
+            ROS_WARN("Could not parse publish parameter");
             return false;
         }
     }
@@ -638,7 +638,7 @@ RosChain::~RosChain(){
         LayerStatus s;
         halt(s);
         shutdown(s);
-    }catch(...){ ROS_ERROR("CATCH"); }
+    }catch(...){ ROS_WARN("CATCH"); }
 }
 
 }

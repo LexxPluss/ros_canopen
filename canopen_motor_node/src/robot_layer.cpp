@@ -111,7 +111,7 @@ bool RobotLayer::prepareSwitch(const std::list<hardware_interface::ControllerInf
     for (std::list<hardware_interface::ControllerInfo>::const_iterator controller_it = stop_list.begin(); controller_it != stop_list.end(); ++controller_it){
 
         if(switch_map_.find(controller_it->name) == switch_map_.end()){
-            ROS_ERROR_STREAM(controller_it->name << " was not started before");
+            ROS_WARN_STREAM(controller_it->name << " was not started before");
             return false;
         }
     }
@@ -129,11 +129,11 @@ bool RobotLayer::prepareSwitch(const std::list<hardware_interface::ControllerInf
                 for (std::set<std::string>::const_iterator res_it = cres_it->resources.begin(); res_it != cres_it->resources.end(); ++res_it){
                     claimed_interfaces.insert(cres_it->hardware_interface);
                     if(!ml.hasModes()){
-                        ROS_ERROR_STREAM("Please set required_drive_mode(s) for controller " << controller_it->name);
+                        ROS_WARN_STREAM("Please set required_drive_mode(s) for controller " << controller_it->name);
                         return false;
                     }
                     if(claimed_interfaces.size() > 1 && !ml.hasMixedModes()){
-                        ROS_ERROR_STREAM("controller "<< controller_it->name << " has mixed interfaces, please set required_drive_modes.");
+                        ROS_WARN_STREAM("controller "<< controller_it->name << " has mixed interfaces, please set required_drive_modes.");
                         return false;
                     }
 
@@ -142,19 +142,19 @@ bool RobotLayer::prepareSwitch(const std::list<hardware_interface::ControllerInf
                     const std::string & joint = *res_it;
 
                     if(h_it == handles_.end()){
-                        ROS_ERROR_STREAM(joint << " not found");
+                        ROS_WARN_STREAM(joint << " not found");
                         return false;
                     }
                     SwitchData sd;
                     sd.enforce_limits = nh.param("enforce_limits", true);
 
                     if(!ml.getMode(sd.mode, joint)){
-                        ROS_ERROR_STREAM("could not determine drive mode for " << joint);
+                        ROS_WARN_STREAM("could not determine drive mode for " << joint);
                         return false;
                     }
 
                     if(g_interface_mapping.hasConflict(cres_it->hardware_interface, sd.mode)){
-                        ROS_ERROR_STREAM(cres_it->hardware_interface << " cannot be provided in mode " << sd.mode);
+                        ROS_WARN_STREAM(cres_it->hardware_interface << " cannot be provided in mode " << sd.mode);
                         return false;
                     }
 
@@ -162,10 +162,10 @@ bool RobotLayer::prepareSwitch(const std::list<hardware_interface::ControllerInf
 
                     switch(res){
                         case HandleLayerBase::NotSupported:
-                            ROS_ERROR_STREAM("Mode " << sd.mode << " is not available for " << joint);
+                            ROS_WARN_STREAM("Mode " << sd.mode << " is not available for " << joint);
                             return false;
                         case HandleLayerBase::NotReadyToSwitch:
-                            ROS_ERROR_STREAM(joint << " is not ready to switch mode");
+                            ROS_WARN_STREAM(joint << " is not ready to switch mode");
                             return false;
                         case HandleLayerBase::ReadyToSwitch:
                         case HandleLayerBase::NoNeedToSwitch:
@@ -196,7 +196,7 @@ bool RobotLayer::prepareSwitch(const std::list<hardware_interface::ControllerInf
         for(RobotLayer::SwitchContainer::iterator it = to_switch.begin(); it != to_switch.end(); ++it){
             if(!it->handle->switchMode(it->mode)){
                 failed_controllers.push_back(controller_it->name);
-                ROS_ERROR_STREAM("Could not switch one joint for " << controller_it->name << ", will stop all related joints and the controller.");
+                ROS_WARN_STREAM("Could not switch one joint for " << controller_it->name << ", will stop all related joints and the controller.");
                 for(RobotLayer::SwitchContainer::iterator stop_it = to_switch.begin(); stop_it != to_switch.end(); ++stop_it){
                     to_stop.insert(stop_it->handle);
                 }
@@ -227,7 +227,7 @@ void RobotLayer::doSwitch(const std::list<hardware_interface::ControllerInfo> &s
             for(RobotLayer::SwitchContainer::iterator it = to_switch.begin(); it != to_switch.end(); ++it){
                 if(!it->handle->forwardForMode(it->mode)){
                     failed_controllers.push_back(controller_it->name);
-                    ROS_ERROR_STREAM("Could not switch one joint for " << controller_it->name << ", will stop all related joints and the controller.");
+                    ROS_WARN_STREAM("Could not switch one joint for " << controller_it->name << ", will stop all related joints and the controller.");
                     for(RobotLayer::SwitchContainer::iterator stop_it = to_switch.begin(); stop_it != to_switch.end(); ++stop_it){
                         it->handle->switchMode(MotorBase::No_Mode);
                     }
@@ -236,7 +236,7 @@ void RobotLayer::doSwitch(const std::list<hardware_interface::ControllerInfo> &s
             }
 
         }catch(const std::out_of_range&){
-            ROS_ERROR_STREAM("Conttroller " << controller_it->name << "not found, will stop it");
+            ROS_WARN_STREAM("Conttroller " << controller_it->name << "not found, will stop it");
             failed_controllers.push_back(controller_it->name);
         }
     }

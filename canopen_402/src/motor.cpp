@@ -487,6 +487,11 @@ void Motor402::handleInit(LayerStatus &status){
         return;
     }
 
+    if(disable_init_homing_){
+        ROSCANOPEN_INFO("canopen_402", "Skipping init homing because disable_init_homing is true");
+        return;
+    }
+
     ModeSharedPtr m = allocMode(MotorBase::Homing);
     if(!m){
         return; // homing not supported

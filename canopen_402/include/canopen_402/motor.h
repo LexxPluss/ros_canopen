@@ -295,6 +295,7 @@ public:
     Motor402(const std::string &name, ObjectStorageSharedPtr storage, const canopen::Settings &settings)
     : MotorBase(name), status_word_(0),control_word_(0),
       switching_state_(State402::InternalState(settings.get_optional<unsigned int>("switching_state", static_cast<unsigned int>(State402::Operation_Enable)))),
+      disable_init_homing_(settings.get_optional<bool>("disable_init_homing", true)),
       monitor_mode_(settings.get_optional<bool>("monitor_mode", true)),
       state_switch_timeout_(settings.get_optional<unsigned int>("state_switch_timeout", 5))
     {
@@ -375,6 +376,7 @@ private:
     boost::condition_variable mode_cond_;
     boost::mutex mode_mutex_;
     const State402::InternalState switching_state_;
+    const bool disable_init_homing_;
     const bool monitor_mode_;
     const boost::chrono::seconds state_switch_timeout_;
 

@@ -1,5 +1,32 @@
 #include <canopen_master/canopen.h>
 
+// === BEGIN FAULT INJECT (amazon_sudden_shutdown reproduction; remove before merge) ===
+#include <unistd.h>
+#include <cstdio>
+#include <unordered_map>
+#include <boost/thread/mutex.hpp>
+
+namespace {
+    struct FaultCacheKey {
+        uint8_t node;
+        uint16_t index;
+        bool operator==(const FaultCacheKey& o) const { return node == o.node && index == o.index; }
+    };
+    struct FaultCacheKeyHash {
+        size_t operator()(const FaultCacheKey& k) const { return (size_t(k.node) << 16) ^ k.index; }
+    };
+    static std::unordered_map<FaultCacheKey, std::vector<char>, FaultCacheKeyHash> g_fault_cached_reads;
+    static boost::mutex g_fault_cache_mutex;
+
+    static bool faultInjectActive(uint8_t node, uint16_t index) {
+        if (index != 0x6069) return false;  // only velocity_actual_value
+        char path[64];
+        std::snprintf(path, sizeof(path), "/tmp/canopen_fault_inject_node_%d", (int)node);
+        return access(path, F_OK) == 0;
+    }
+}
+// === END FAULT INJECT ===
+
 using namespace canopen;
 
 const uint8_t COMMAND_MASK =  (1<<7) | (1<<6) | (1<<5);
@@ -434,9 +461,30 @@ void SDOClient::transmitAndWait(const canopen::ObjectDict::Entry &entry, const S
 }
 
 void SDOClient::read(const canopen::ObjectDict::Entry &entry, String &data){
+    // === BEGIN FAULT INJECT ===
+    uint8_t node_id = storage_->node_id_;
+    if (faultInjectActive(node_id, entry.index)) {
+        boost::mutex::scoped_lock cl(g_fault_cache_mutex);
+        FaultCacheKey k{node_id, entry.index};
+        auto it = g_fault_cached_reads.find(k);
+        if (it != g_fault_cached_reads.end()) {
+            data.assign(it->second.begin(), it->second.end());
+        } else {
+            data.assign(4, 0);  // cold cache: zero-fill 4 bytes (INT32)
+        }
+        return;
+    }
+    // === END FAULT INJECT ===
     boost::timed_mutex::scoped_lock lock(mutex, boost::chrono::seconds(2));
     if(lock){
         transmitAndWait(entry, data, &data);
+        // === FAULT INJECT cache update ===
+        {
+            boost::mutex::scoped_lock cl(g_fault_cache_mutex);
+            g_fault_cached_reads[FaultCacheKey{node_id, entry.index}] =
+                std::vector<char>(data.begin(), data.end());
+        }
+        // === end ===
     }else{
         THROW_WITH_KEY(TimeoutException("SDO read"), ObjectDict::Key(entry));
     }
